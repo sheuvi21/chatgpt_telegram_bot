@@ -3,6 +3,6 @@
 
 .vscode/
 
-venv/
-
 mongodb/
+static/
+venv/
