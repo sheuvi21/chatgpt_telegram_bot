@@ -16,7 +16,7 @@ code_assistant:
   parse_mode: markdown
 
 artist:
-  name: 👩‍🎨 Artist
+  name: 👩‍🎨 Artist (DALL·E 3)
   welcome_message: 👩‍🎨 Hi, I'm <b>Artist</b>. I'll draw anything you write me (e.g. <i>Ginger cat selfie on Times Square, illustration</i>)
 
 english_tutor:

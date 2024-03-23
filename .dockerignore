@@ -1,4 +1,8 @@
 .git/
 .gitignore
 
+.vscode/
+
+venv/
+
 mongodb/
