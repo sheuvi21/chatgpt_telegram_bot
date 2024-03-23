@@ -40,17 +40,6 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 
 ---
 
-## 🤑 Payments
-[My bot](https://t.me/chatgpt_karfly_bot) supports many payments providers:
-- 💎 Crypto
-- [Stripe](https://stripe.com)
-- [Smart Glocal](https://smart-glocal.com)
-- [Unlimint](https://www.unlimint.com)
-- [ЮMoney](https://yoomoney.ru)
-- and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
-
-If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)) or Email (kar.iskakov@gmail.com).
-
 ## News
 - *21 Apr 2023*:
     - DALLE 2 support
@@ -89,7 +78,7 @@ If you want to add payments to your bot and create profitable business – write
     ```
 
 ## ❤️ Top donations
-You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
+You can be in this list:
 
 1. [LilRocco](https://t.me/LilRocco). Donation: **11000$** (!!!)
 
@@ -116,6 +105,10 @@ You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot
 1. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
 
 1. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+
+## Contributors
+- Main contributor: @karfly
+- [Father.Bot](https://father.bot).
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)
