@@ -1,4 +1,5 @@
 import config
+from api_utils import LLM
 
 import tiktoken
 import openai
@@ -35,7 +36,7 @@ OPENAI_CHAT_MODELS = {
 }
 
 
-class ChatGPT:
+class ChatGPT(LLM):
     def __init__(self, model="gpt-3.5-turbo"):
         assert model in OPENAI_AVAILABLE_MODELS, f"Unknown model: {model}"
         self.model = model

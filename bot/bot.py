@@ -30,6 +30,8 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
+import anthropic_utils
+import api_utils
 
 
 # setup
@@ -178,6 +180,15 @@ async def retry_handle(update: Update, context: CallbackContext):
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
+def pick_llm(model) -> api_utils.LLM:
+    if model in openai_utils.OPENAI_AVAILABLE_MODELS:
+        return openai_utils.ChatGPT(model=model)
+    elif model in anthropic_utils.ANTHROPIC_AVAILABLE_MODELS:
+        return anthropic_utils.Claude(model=model)
+    else:
+        raise ValueError(f"Unknown model: {model}")
+
+
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
     # check if bot was mentioned (for group chats)
     if not await is_bot_mentioned(update, context):
@@ -233,11 +244,11 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 "markdown": ParseMode.MARKDOWN
             }[config.chat_modes[chat_mode]["parse_mode"]]
 
-            chatgpt_instance = openai_utils.ChatGPT(model=current_model)
+            llm_instance = pick_llm(current_model)
             if config.enable_message_streaming:
-                gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
+                gen = llm_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
-                answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
+                answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await llm_instance.send_message(
                     _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
