@@ -676,6 +676,10 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
 def get_settings_menu(user_id: int):
     current_model = db.get_user_attribute(user_id, "current_model")
+    if current_model not in config.models["available_text_models"]:
+        current_model = config.models["available_text_models"][0]
+        db.set_user_attribute(user_id, "current_model", current_model)
+
     text = config.models["info"][current_model]["description"]
 
     text += "\n\n"
