@@ -185,9 +185,9 @@ async def _vision_message_handle_fn(
     user_id = update.message.from_user.id
     current_model = db.get_user_attribute(user_id, "current_model")
 
-    if current_model != "gpt-4-vision-preview":
+    if current_model not in openai_utils.OPENAI_VISION_MODELS:
         await update.message.reply_text(
-            "🥲 Images processing is only available for <b>gpt-4-vision-preview</b> model. Please change your settings in /settings",
+            "🥲 Images processing is only available for <b>GPT-4 Vision</b> models. Please change your settings in /settings",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -301,8 +301,10 @@ async def _vision_message_handle_fn(
                             "text": message,
                         },
                         {
-                            "type": "image",
-                            "image": base_image,
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base_image}",
+                            }
                         }
                     ]
                 , "bot": answer, "date": datetime.now()}
@@ -459,11 +461,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        if current_model == "gpt-4-vision-preview" or update.message.photo is not None and len(update.message.photo) > 0:
-            logger.error('gpt-4-vision-preview')
-            if current_model != "gpt-4-vision-preview":
-                current_model = "gpt-4-vision-preview"
-                db.set_user_attribute(user_id, "current_model", "gpt-4-vision-preview")
+        if current_model in openai_utils.OPENAI_VISION_MODELS or update.message.photo is not None and len(update.message.photo) > 0:
+            if current_model not in openai_utils.OPENAI_VISION_MODELS:
+                current_model = "gpt-4o"
+                db.set_user_attribute(user_id, "current_model", current_model)
             task = asyncio.create_task(
                 _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)
             )

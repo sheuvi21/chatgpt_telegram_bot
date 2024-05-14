@@ -30,6 +30,7 @@ OPENAI_AVAILABLE_MODELS = {
     "gpt-4-1106-preview",
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
+    "gpt-4o",
 }
 OPENAI_CHAT_MODELS = {
     "gpt-3.5-turbo-16k",
@@ -38,6 +39,12 @@ OPENAI_CHAT_MODELS = {
     "gpt-4-1106-preview",
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
+    "gpt-4o",
+}
+OPENAI_VISION_MODELS = {
+    "gpt-4-turbo-preview",
+    "gpt-4-vision-preview",
+    "gpt-4o",
 }
 
 
@@ -155,7 +162,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model == "gpt-4-vision-preview":
+                if self.model in OPENAI_VISION_MODELS:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -203,7 +210,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model == "gpt-4-vision-preview":
+                if self.model in OPENAI_VISION_MODELS:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -286,8 +293,10 @@ class ChatGPT:
                             "text": message,
                         },
                         {
-                            "type": "image",
-                            "image": self._encode_image(image_buffer),
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{self._encode_image(image_buffer)}",
+                            }
                         }
                     ]
                 }
@@ -321,6 +330,9 @@ class ChatGPT:
             tokens_per_message = 3
             tokens_per_name = 1
         elif model == "gpt-4-vision-preview":
+            tokens_per_message = 3
+            tokens_per_name = 1
+        elif model == "gpt-4o":
             tokens_per_message = 3
             tokens_per_name = 1
         else:
