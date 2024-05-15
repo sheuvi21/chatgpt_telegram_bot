@@ -1,9 +1,9 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-4o", "claude-3-haiku-20240307", "claude-3-sonnet-20240229", "claude-3-opus-20240229"]
+available_text_models: ["gpt-4o", "claude-3-sonnet-20240229", "claude-3-opus-20240229"]
 
 info:
   claude-3-opus-20240229:
     type: chat_completion
-    name: Opus
+    name: Claude 3 Opus
     description: Claude 3 Opus is the most powerful model for highly complex tasks.
 
     price_per_1000_input_tokens: 0.015
@@ -16,7 +16,7 @@ info:
 
   claude-3-sonnet-20240229:
     type: chat_completion
-    name: Sonnet
+    name: Claude 3 Sonnet
     description: Claude 3 Sonnet has ideal balance of intelligence and speed for enterprise workloads.
 
     price_per_1000_input_tokens: 0.003
@@ -29,7 +29,7 @@ info:
 
   claude-3-haiku-20240307:
     type: chat_completion
-    name: Haiku
+    name: Claude 3 Haiku
     description: Claude 3 Haiku is the fastest and most compact model for near-instant responsiveness.
 
     price_per_1000_input_tokens: 0.00025
