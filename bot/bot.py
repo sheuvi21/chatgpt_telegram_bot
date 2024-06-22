@@ -187,9 +187,9 @@ async def _vision_message_handle_fn(
     user_id = update.message.from_user.id
     current_model = db.get_user_attribute(user_id, "current_model")
 
-    if current_model not in openai_utils.OPENAI_VISION_MODELS:
+    if not (current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS):
         await update.message.reply_text(
-            "🥲 Images processing is only available for <b>GPT-4 Vision</b> models. Please change your settings in /settings",
+            "🥲 Images processing is only available for vision models. Please change your settings in /settings",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -230,9 +230,9 @@ async def _vision_message_handle_fn(
             config.chat_modes[chat_mode]["parse_mode"]
         ]
 
-        chatgpt_instance = openai_utils.ChatGPT(model=current_model)
+        llm_instance = pick_llm(current_model)
         if config.enable_message_streaming:
-            gen = chatgpt_instance.send_vision_message_stream(
+            gen = llm_instance.send_vision_message_stream(
                 message,
                 dialog_messages=dialog_messages,
                 image_buffer=buf,
@@ -243,7 +243,7 @@ async def _vision_message_handle_fn(
                 answer,
                 (n_input_tokens, n_output_tokens),
                 n_first_dialog_messages_removed,
-            ) = await chatgpt_instance.send_vision_message(
+            ) = await llm_instance.send_vision_message(
                 message,
                 dialog_messages=dialog_messages,
                 image_buffer=buf,
@@ -472,8 +472,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        if current_model in openai_utils.OPENAI_VISION_MODELS or update.message.photo is not None and len(update.message.photo) > 0:
-            if current_model not in openai_utils.OPENAI_VISION_MODELS:
+        if current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS \
+                or update.message.photo is not None and len(update.message.photo) > 0:
+            if not (current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS):
                 current_model = "gpt-4o"
                 db.set_user_attribute(user_id, "current_model", current_model)
             task = asyncio.create_task(

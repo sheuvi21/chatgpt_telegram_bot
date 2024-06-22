@@ -4,7 +4,7 @@ info:
   claude-3-5-sonnet-20240620:
     type: chat_completion
     name: Claude 3.5 Sonnet
-    description: Claude 3.5 Sonnet is the most intelligent model.
+    description: Claude 3.5 Sonnet is the most intelligent model, accepting text and image input.
 
     price_per_1000_input_tokens: 0.003
     price_per_1000_output_tokens: 0.015
