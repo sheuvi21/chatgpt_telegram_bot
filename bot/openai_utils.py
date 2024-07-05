@@ -64,6 +64,7 @@ class ChatGPT(LLM):
             try:
                 if self.model in OPENAI_CHAT_MODELS:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    message = messages[-1]["content"]
 
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -93,7 +94,12 @@ class ChatGPT(LLM):
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+        return (
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -105,6 +111,7 @@ class ChatGPT(LLM):
             try:
                 if self.model in OPENAI_CHAT_MODELS:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    message = messages[-1]["content"]
 
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -139,7 +146,13 @@ class ChatGPT(LLM):
                         answer += r_item.choices[0].text
                         n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
                         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
-                        yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                        yield (
+                            "not_finished",
+                            answer,
+                            (n_input_tokens, n_output_tokens),
+                            n_first_dialog_messages_removed,
+                            message,
+                        )
 
                 answer = self._postprocess_answer(answer)
 
@@ -150,7 +163,13 @@ class ChatGPT(LLM):
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
+        yield (
+            "finished",
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )  # sending final answer
 
     async def send_vision_message(
         self,
@@ -167,6 +186,7 @@ class ChatGPT(LLM):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
+                    message = messages[-1]["content"]
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -198,6 +218,7 @@ class ChatGPT(LLM):
             answer,
             (n_input_tokens, n_output_tokens),
             n_first_dialog_messages_removed,
+            message,
         )
 
     async def send_vision_message_stream(
@@ -215,6 +236,7 @@ class ChatGPT(LLM):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
+                    message = messages[-1]["content"]
                     
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -237,10 +259,13 @@ class ChatGPT(LLM):
                             n_first_dialog_messages_removed = (
                                 n_dialog_messages_before - len(dialog_messages)
                             )
-                            yield "not_finished", answer, (
-                                n_input_tokens,
-                                n_output_tokens,
-                            ), n_first_dialog_messages_removed
+                            yield (
+                                "not_finished",
+                                answer,
+                                (n_input_tokens, n_output_tokens),
+                                n_first_dialog_messages_removed,
+                                message,
+                            )
 
                 answer = self._postprocess_answer(answer)
 
@@ -250,10 +275,13 @@ class ChatGPT(LLM):
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (
-            n_input_tokens,
-            n_output_tokens,
-        ), n_first_dialog_messages_removed
+        yield (
+            "finished",
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
         prompt = config.chat_modes[chat_mode]["prompt_start"]

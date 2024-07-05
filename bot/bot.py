@@ -243,6 +243,7 @@ async def _vision_message_handle_fn(
                 answer,
                 (n_input_tokens, n_output_tokens),
                 n_first_dialog_messages_removed,
+                message,
             ) = await llm_instance.send_vision_message(
                 message,
                 dialog_messages=dialog_messages,
@@ -251,10 +252,13 @@ async def _vision_message_handle_fn(
             )
 
             async def fake_gen():
-                yield "finished", answer, (
-                    n_input_tokens,
-                    n_output_tokens,
-                ), n_first_dialog_messages_removed
+                yield (
+                    "finished",
+                    answer,
+                    (n_input_tokens, n_output_tokens),
+                    n_first_dialog_messages_removed,
+                    message,
+                )
 
             gen = fake_gen()
 
@@ -265,6 +269,7 @@ async def _vision_message_handle_fn(
                 answer,
                 (n_input_tokens, n_output_tokens),
                 n_first_dialog_messages_removed,
+                message,
             ) = gen_item
 
             answer = answer[:4096]  # telegram message limit
@@ -295,23 +300,7 @@ async def _vision_message_handle_fn(
             prev_answer = answer
 
         # update user data
-        if buf is not None:
-            base_image = base64.b64encode(buf.getvalue()).decode("utf-8")
-            new_dialog_message = {"user": [
-                        {
-                            "type": "text",
-                            "text": message,
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base_image}",
-                            }
-                        }
-                    ]
-                , "bot": answer, "date": datetime.now()}
-        else:
-            new_dialog_message = {"user": [{"type": "text", "text": message}], "bot": answer, "date": datetime.now()}
+        new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
         
         db.set_dialog_messages(
             user_id,
@@ -407,21 +396,38 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             if config.enable_message_streaming:
                 gen = llm_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
-                answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await llm_instance.send_message(
+                (
+                    answer,
+                    (n_input_tokens, n_output_tokens),
+                    n_first_dialog_messages_removed,
+                    message,
+                ) = await llm_instance.send_message(
                     _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
                 )
 
                 async def fake_gen():
-                    yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                    yield (
+                        "finished",
+                        answer,
+                        (n_input_tokens, n_output_tokens),
+                        n_first_dialog_messages_removed,
+                        message,
+                    )
 
                 gen = fake_gen()
 
             prev_answer = ""
             
             async for gen_item in gen:
-                status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
+                (
+                    status,
+                    answer,
+                    (n_input_tokens, n_output_tokens),
+                    n_first_dialog_messages_removed,
+                    message,
+                ) = gen_item
 
                 answer = answer[:4096]  # telegram message limit
                     
@@ -442,7 +448,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 prev_answer = answer
             
             # update user data
-            new_dialog_message = {"user": [{"type": "text", "text": _message}], "bot": answer, "date": datetime.now()}
+            new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
 
             db.set_dialog_messages(
                 user_id,

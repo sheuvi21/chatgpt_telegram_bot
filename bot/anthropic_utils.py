@@ -41,6 +41,7 @@ class Claude(LLM):
         while answer is None:
             try:
                 messages = self._generate_prompt_messages(message, dialog_messages)
+                message = messages[-1]["content"]
                 prompt = config.chat_modes[chat_mode]["prompt_start"]
 
                 m = client.messages.create(
@@ -62,7 +63,12 @@ class Claude(LLM):
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+        return (
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -79,6 +85,7 @@ class Claude(LLM):
 
             try:
                 messages = self._generate_prompt_messages(message, dialog_messages)
+                message = messages[-1]["content"]
                 prompt = config.chat_modes[chat_mode]["prompt_start"]
 
                 async with client.messages.stream(
@@ -97,7 +104,13 @@ class Claude(LLM):
                             n_input_tokens = m.usage.input_tokens
                         elif event.type == 'content_block_delta':
                             answer += event.delta.text
-                            yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                            yield (
+                                "not_finished",
+                                answer,
+                                (n_input_tokens, n_output_tokens),
+                                n_first_dialog_messages_removed,
+                                message,
+                            )
                         elif event.type == 'message_delta':
                             n_output_tokens = event.usage.output_tokens
 
@@ -110,7 +123,13 @@ class Claude(LLM):
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
+        yield (
+            "finished",
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )  # sending final answer
 
     async def send_vision_message(
         self,
@@ -131,6 +150,7 @@ class Claude(LLM):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, image_buffer
                     )
+                    message = messages[-1]["content"]
                     prompt = config.chat_modes[chat_mode]["prompt_start"]
 
                     m = client.messages.create(
@@ -162,6 +182,7 @@ class Claude(LLM):
             answer,
             (n_input_tokens, n_output_tokens),
             n_first_dialog_messages_removed,
+            message,
         )
 
     async def send_vision_message_stream(
@@ -183,6 +204,7 @@ class Claude(LLM):
             try:
                 if self.model in ANTHROPIC_VISION_MODELS:
                     messages = self._generate_prompt_messages(message, dialog_messages, image_buffer)
+                    message = messages[-1]["content"]
                     prompt = config.chat_modes[chat_mode]["prompt_start"]
 
                     async with client.messages.stream(
@@ -201,7 +223,13 @@ class Claude(LLM):
                                 n_input_tokens = m.usage.input_tokens
                             elif event.type == 'content_block_delta':
                                 answer += event.delta.text
-                                yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                                yield (
+                                    "not_finished",
+                                    answer,
+                                    (n_input_tokens, n_output_tokens),
+                                    n_first_dialog_messages_removed,
+                                    message,
+                                )
                             elif event.type == 'message_delta':
                                 n_output_tokens = event.usage.output_tokens
 
@@ -212,10 +240,13 @@ class Claude(LLM):
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (
-            n_input_tokens,
-            n_output_tokens,
-        ), n_first_dialog_messages_removed
+        yield (
+            "finished",
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+            message,
+        )
 
     def _generate_prompt_messages(self, message, dialog_messages, image_buffer: BytesIO = None):
         messages = []
