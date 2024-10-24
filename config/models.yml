@@ -1,7 +1,7 @@
-available_text_models: ["gpt-4o", "claude-3-5-sonnet-20240620"]
+available_text_models: ["gpt-4o", "claude-3-5-sonnet-latest"]
 
 info:
-  claude-3-5-sonnet-20240620:
+  claude-3-5-sonnet-latest:
     type: chat_completion
     name: Claude 3.5 Sonnet
     description: Claude 3.5 Sonnet is the most intelligent model, accepting text and image input.
