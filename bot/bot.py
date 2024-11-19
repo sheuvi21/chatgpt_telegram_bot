@@ -492,8 +492,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        if current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS \
-                or update.message.photo is not None and len(update.message.photo) > 0:
+        if update.message.photo is not None and len(update.message.photo) > 0:
             if not (current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS):
                 current_model = "gpt-4o"
                 db.set_user_attribute(user_id, "current_model", current_model)

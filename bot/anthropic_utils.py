@@ -7,7 +7,7 @@ import anthropic
 
 
 ANTHROPIC_MESSAGES_PARAMS = {
-    "max_tokens": 1024,
+    "max_tokens": 4096,
 }
 ANTHROPIC_AVAILABLE_MODELS = {
     "claude-3-opus-20240229",
