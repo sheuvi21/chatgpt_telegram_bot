@@ -13,7 +13,8 @@ from telegram import (
     User,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    BotCommand
+    BotCommand,
+    Message
 )
 from telegram.ext import (
     Application,
@@ -25,7 +26,7 @@ from telegram.ext import (
     AIORateLimiter,
     filters
 )
-from telegram.constants import ParseMode, ChatAction
+from telegram.constants import ParseMode, ChatAction, MessageLimit
 
 import config
 import database
@@ -180,6 +181,22 @@ async def retry_handle(update: Update, context: CallbackContext):
 
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
+async def _try_and_edit_message(
+    context: CallbackContext, message: Message, text, parse_mode=None
+):
+    try:
+        await context.bot.edit_message_text(
+            text,
+            chat_id=message.chat_id,
+            message_id=message.message_id,
+            parse_mode=parse_mode,
+        )
+    except telegram.error.BadRequest as e:
+        if str(e).startswith("Message is not modified"):
+            return
+        if parse_mode is not None:
+            await _try_and_edit_message(context, message, text)
+
 async def _vision_message_handle_fn(
     update: Update, context: CallbackContext, use_new_dialog_timeout: bool = True
 ):
@@ -263,6 +280,7 @@ async def _vision_message_handle_fn(
             gen = fake_gen()
 
         prev_answer = ""
+        prev_limit = 0
         async for gen_item in gen:
             (
                 status,
@@ -272,28 +290,21 @@ async def _vision_message_handle_fn(
                 message,
             ) = gen_item
 
-            answer = answer[:4096]  # telegram message limit
-
             # update only when 100 new symbols are ready
             if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                 continue
 
-            try:
-                await context.bot.edit_message_text(
-                    answer,
-                    chat_id=placeholder_message.chat_id,
-                    message_id=placeholder_message.message_id,
-                    parse_mode=parse_mode,
-                )
-            except telegram.error.BadRequest as e:
-                if str(e).startswith("Message is not modified"):
-                    continue
-                else:
-                    await context.bot.edit_message_text(
-                        answer,
-                        chat_id=placeholder_message.chat_id,
-                        message_id=placeholder_message.message_id,
-                    )
+            # split answer into multiple messages if Telegram's message length limit reached
+            last_limit = len(answer) // MessageLimit.MAX_TEXT_LENGTH * MessageLimit.MAX_TEXT_LENGTH
+
+            if last_limit > 0 and len(prev_answer) <= last_limit and len(answer) > last_limit:
+                await _try_and_edit_message(context, placeholder_message, answer[prev_limit:last_limit], parse_mode)
+
+                placeholder_message = await update.message.reply_text("...")
+
+                prev_limit = last_limit
+
+            await _try_and_edit_message(context, placeholder_message, answer[last_limit:], parse_mode)
 
             await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
@@ -419,6 +430,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 gen = fake_gen()
 
             prev_answer = ""
+            prev_limit = 0
             
             async for gen_item in gen:
                 (
@@ -429,19 +441,21 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     message,
                 ) = gen_item
 
-                answer = answer[:4096]  # telegram message limit
-                    
                 # update only when 100 new symbols are ready
                 if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                     continue
 
-                try:
-                    await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=parse_mode)
-                except telegram.error.BadRequest as e:
-                    if str(e).startswith("Message is not modified"):
-                        continue
-                    else:
-                        await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
+                # split answer into multiple messages if Telegram's message length limit reached
+                last_limit = len(answer) // MessageLimit.MAX_TEXT_LENGTH * MessageLimit.MAX_TEXT_LENGTH
+
+                if last_limit > 0 and len(prev_answer) <= last_limit and len(answer) > last_limit:
+                    await _try_and_edit_message(context, placeholder_message, answer[prev_limit:last_limit], parse_mode)
+
+                    placeholder_message = await update.message.reply_text("...")
+
+                    prev_limit = last_limit
+
+                await _try_and_edit_message(context, placeholder_message, answer[last_limit:], parse_mode)
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
                 
@@ -464,8 +478,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             raise
 
         except Exception as e:
+            logger.error('{}: {}'.format(type(e).__name__, str(e)))
             error_text = f"Something went wrong during completion. Reason: {e}"
-            logger.error(error_text)
             await update.message.reply_text(error_text)
             return
 
