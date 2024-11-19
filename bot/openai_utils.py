@@ -121,7 +121,13 @@ class ChatGPT:
                             n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
                             n_first_dialog_messages_removed = 0
 
-                            yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                            yield (
+                                "not_finished",
+                                answer,
+                                (n_input_tokens, n_output_tokens),
+                                n_first_dialog_messages_removed,
+                                message,
+                            )
                             
 
                 elif self.model == "text-davinci-003":
