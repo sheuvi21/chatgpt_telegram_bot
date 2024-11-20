@@ -32,6 +32,8 @@ OPENAI_AVAILABLE_MODELS = {
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
     "gpt-4o",
+    "o1-preview",
+    "o1-mini",
 }
 OPENAI_CHAT_MODELS = {
     "gpt-3.5-turbo-16k",
@@ -41,11 +43,17 @@ OPENAI_CHAT_MODELS = {
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
     "gpt-4o",
+    "o1-preview",
+    "o1-mini",
 }
 OPENAI_VISION_MODELS = {
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
     "gpt-4o",
+}
+OPENAI_REASONING_MODELS = {
+    "o1-preview",
+    "o1-mini",
 }
 
 
@@ -55,21 +63,20 @@ class ChatGPT(LLM):
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
-            raise ValueError(f"Chat mode {chat_mode} is not supported")
+        prompt = self._get_system_prompt(chat_mode)
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
             try:
                 if self.model in OPENAI_CHAT_MODELS:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, prompt=prompt)
                     message = messages[-1]["content"]
 
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._get_completion_options()
                     )
                     answer = r.choices[0].message["content"]
                 elif self.model == "text-davinci-003":
@@ -77,7 +84,7 @@ class ChatGPT(LLM):
                     r = await openai.Completion.acreate(
                         engine=self.model,
                         prompt=prompt,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._get_completion_options()
                     )
                     answer = r.choices[0].text
                 else:
@@ -102,22 +109,21 @@ class ChatGPT(LLM):
         )
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
-            raise ValueError(f"Chat mode {chat_mode} is not supported")
+        prompt = self._get_system_prompt(chat_mode)
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
             try:
                 if self.model in OPENAI_CHAT_MODELS:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, prompt=prompt)
                     message = messages[-1]["content"]
 
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._get_completion_options()
                     )
 
                     answer = ""
@@ -144,7 +150,7 @@ class ChatGPT(LLM):
                         engine=self.model,
                         prompt=prompt,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._get_completion_options()
                     )
 
                     answer = ""
@@ -184,19 +190,21 @@ class ChatGPT(LLM):
         chat_mode="assistant",
         image_buffer: BytesIO = None,
     ):
+        prompt = self._get_system_prompt(chat_mode)
+
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
             try:
                 if self.model in OPENAI_VISION_MODELS:
                     messages = self._generate_prompt_messages(
-                        message, dialog_messages, chat_mode, image_buffer
+                        message, dialog_messages, prompt=prompt, image_buffer=image_buffer
                     )
                     message = messages[-1]["content"]
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._get_completion_options()
                     )
                     answer = r.choices[0].message.content
                 else:
@@ -234,13 +242,15 @@ class ChatGPT(LLM):
         chat_mode="assistant",
         image_buffer: BytesIO = None,
     ):
+        prompt = self._get_system_prompt(chat_mode)
+
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
             try:
                 if self.model in OPENAI_VISION_MODELS:
                     messages = self._generate_prompt_messages(
-                        message, dialog_messages, chat_mode, image_buffer
+                        message, dialog_messages, prompt=prompt, image_buffer=image_buffer
                     )
                     message = messages[-1]["content"]
                     
@@ -248,7 +258,7 @@ class ChatGPT(LLM):
                         model=self.model,
                         messages=messages,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS,
+                        **self._get_completion_options(),
                     )
 
                     answer = ""
@@ -309,10 +319,17 @@ class ChatGPT(LLM):
     def _encode_image(self, image_buffer: BytesIO) -> bytes:
         return base64.b64encode(image_buffer.read()).decode("utf-8")
 
-    def _generate_prompt_messages(self, message, dialog_messages, chat_mode, image_buffer: BytesIO = None):
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+    def _generate_prompt_messages(
+            self,
+            message,
+            dialog_messages,
+            prompt=None,
+            image_buffer: BytesIO = None
+        ):
+        messages = []
 
-        messages = [{"role": "system", "content": prompt}]
+        if prompt is not None:
+            messages.append({"role": "system", "content": prompt})
         
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
@@ -355,19 +372,7 @@ class ChatGPT(LLM):
         elif model == "gpt-3.5-turbo":
             tokens_per_message = 4
             tokens_per_name = -1
-        elif model == "gpt-4":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4-1106-preview":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4-turbo-preview":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4-vision-preview":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4o":
+        elif model in OPENAI_CHAT_MODELS:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -406,6 +411,21 @@ class ChatGPT(LLM):
         n_output_tokens = len(encoding.encode(answer))
 
         return n_input_tokens, n_output_tokens
+    
+    def _get_system_prompt(self, chat_mode):
+        if self.model in OPENAI_REASONING_MODELS:
+            return None
+
+        if chat_mode not in config.chat_modes.keys():
+            raise ValueError(f"Chat mode {chat_mode} is not supported")
+
+        return config.chat_modes[chat_mode]["prompt_start"]
+
+    def _get_completion_options(self):
+        if self.model in OPENAI_REASONING_MODELS:
+            return {}
+        
+        return OPENAI_COMPLETION_OPTIONS
 
 
 async def transcribe_audio(audio_file) -> str:

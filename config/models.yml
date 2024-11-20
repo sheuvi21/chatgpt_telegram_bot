@@ -1,6 +1,32 @@
-available_text_models: ["gpt-4o", "claude-3-5-sonnet-latest"]
+available_text_models: ["gpt-4o", "claude-3-5-sonnet-latest", "o1-preview", "o1-mini"]
 
 info:
+  o1-preview:
+    type: chat_completion
+    name: o1-preview
+    description: o1-preview is a reasoning model designed to solve hard problems across domains.
+
+    price_per_1000_input_tokens: 0.015
+    price_per_1000_output_tokens: 0.06
+
+    scores:
+      smart: 5
+      fast: 1
+      cheap: 2
+
+  o1-mini:
+    type: chat_completion
+    name: o1-mini
+    description: o1-mini is a faster and cheaper reasoning model particularly good at coding, math, and science.
+
+    price_per_1000_input_tokens: 0.003
+    price_per_1000_output_tokens: 0.012
+
+    scores:
+      smart: 5
+      fast: 2
+      cheap: 3
+
   claude-3-5-sonnet-latest:
     type: chat_completion
     name: Claude 3.5 Sonnet
