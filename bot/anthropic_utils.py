@@ -2,8 +2,13 @@ import config
 from api_utils import LLM
 
 import base64
+import copy
+import logging
 from io import BytesIO
 import anthropic
+
+
+logger = logging.getLogger(__name__)
 
 
 ANTHROPIC_MESSAGES_PARAMS = {
@@ -41,13 +46,14 @@ class Claude(LLM):
         while answer is None:
             try:
                 messages = self._generate_prompt_messages(message, dialog_messages)
-                message = messages[-1]["content"]
-                prompt = config.chat_modes[chat_mode]["prompt_start"]
+                message = copy.deepcopy(messages[-1]["content"])
+                self._cache_messages(messages)
+                system_message = self._get_system_message(chat_mode)
 
                 m = client.messages.create(
                     model=self.model,
                     messages=messages,
-                    system=prompt,
+                    system=system_message,
                     **ANTHROPIC_MESSAGES_PARAMS
                 )
                 answer = m.content[0].text
@@ -85,13 +91,14 @@ class Claude(LLM):
 
             try:
                 messages = self._generate_prompt_messages(message, dialog_messages)
-                message = messages[-1]["content"]
-                prompt = config.chat_modes[chat_mode]["prompt_start"]
+                message = copy.deepcopy(messages[-1]["content"])
+                self._cache_messages(messages)
+                system_message = self._get_system_message(chat_mode)
 
                 async with client.messages.stream(
                     model=self.model,
                     messages=messages,
-                    system=prompt,
+                    system=system_message,
                     **ANTHROPIC_MESSAGES_PARAMS
                 ) as stream:
                     answer = ""
@@ -150,13 +157,14 @@ class Claude(LLM):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, image_buffer
                     )
-                    message = messages[-1]["content"]
-                    prompt = config.chat_modes[chat_mode]["prompt_start"]
+                    message = copy.deepcopy(messages[-1]["content"])
+                    self._cache_messages(messages)
+                    system_message = self._get_system_message(chat_mode)
 
                     m = client.messages.create(
                         model=self.model,
                         messages=messages,
-                        system=prompt,
+                        system=system_message,
                         **ANTHROPIC_MESSAGES_PARAMS
                     )
                     answer = m.content[0].text
@@ -204,13 +212,14 @@ class Claude(LLM):
             try:
                 if self.model in ANTHROPIC_VISION_MODELS:
                     messages = self._generate_prompt_messages(message, dialog_messages, image_buffer)
-                    message = messages[-1]["content"]
-                    prompt = config.chat_modes[chat_mode]["prompt_start"]
+                    message = copy.deepcopy(messages[-1]["content"])
+                    self._cache_messages(messages)
+                    system_message = self._get_system_message(chat_mode)
 
                     async with client.messages.stream(
                         model=self.model,
                         messages=messages,
-                        system=prompt,
+                        system=system_message,
                         **ANTHROPIC_MESSAGES_PARAMS
                     ) as stream:
                         answer = ""
@@ -255,30 +264,59 @@ class Claude(LLM):
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
 
         if image_buffer is not None:
-            messages.append(
-                {
-                    "role": "user", 
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": message,
-                        },
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/jpeg",
-                                "data": self._encode_image(image_buffer),
-                            }
+            messages.append({
+                "role": "user", 
+                "content": [
+                    {
+                        "type": "text",
+                        "text": message,
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": self._encode_image(image_buffer),
                         }
-                    ]
-                }
-                
-            )
+                    }
+                ]
+            })
         else:
-            messages.append({"role": "user", "content": message})
+            messages.append({
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": message,
+                    }
+                ]
+            })
 
         return messages
+    
+    def _get_system_message(self, chat_mode):
+        """
+        Prompt caching: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+        """
+        prompt = config.chat_modes[chat_mode]["prompt_start"]
+
+        return [
+            {
+                "type": "text",
+                "text": prompt,
+                "cache_control": {"type": "ephemeral"}
+            }
+        ]
+    
+    def _cache_messages(self, messages):
+        self._cache_message(messages[-1])
+        
+        if len(messages) >= 3:
+            self._cache_message(messages[-3])
+
+    def _cache_message(self, message):
+        if isinstance(message["content"], list):
+            message["content"][-1]["cache_control"] = {"type": "ephemeral"}
     
     def _encode_image(self, image_buffer: BytesIO) -> bytes:
         return base64.b64encode(image_buffer.read()).decode("utf-8")
