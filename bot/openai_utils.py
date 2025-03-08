@@ -34,6 +34,8 @@ OPENAI_AVAILABLE_MODELS = {
     "gpt-4o",
     "o1-preview",
     "o1-mini",
+    "o1",
+    "o3-mini",
 }
 OPENAI_CHAT_MODELS = {
     "gpt-3.5-turbo-16k",
@@ -45,15 +47,20 @@ OPENAI_CHAT_MODELS = {
     "gpt-4o",
     "o1-preview",
     "o1-mini",
+    "o1",
+    "o3-mini",
 }
 OPENAI_VISION_MODELS = {
     "gpt-4-turbo-preview",
     "gpt-4-vision-preview",
     "gpt-4o",
+    "o1",
 }
 OPENAI_REASONING_MODELS = {
     "o1-preview",
     "o1-mini",
+    "o1",
+    "o3-mini",
 }
 
 
