@@ -494,7 +494,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     async with user_semaphores[user_id]:
         if update.message.photo is not None and len(update.message.photo) > 0:
             if not (current_model in openai_utils.OPENAI_VISION_MODELS or current_model in anthropic_utils.ANTHROPIC_VISION_MODELS):
-                current_model = "gpt-4o"
+                current_model = "gpt-4.1"
                 db.set_user_attribute(user_id, "current_model", current_model)
             task = asyncio.create_task(
                 _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)

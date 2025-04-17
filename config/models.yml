@@ -1,6 +1,19 @@
-available_text_models: ["gpt-4o", "claude-3-7-sonnet-latest", "o1", "o3-mini"]
+available_text_models: ["gpt-4.1", "claude-3-7-sonnet-latest", "o1", "o3-mini"]
 
 info:
+  gpt-4.1:
+    type: chat_completion
+    name: GPT-4.1
+    description: GPT-4.1 is OpenAI's flagship model for complex tasks.
+
+    price_per_1000_input_tokens: 0.002
+    price_per_1000_output_tokens: 0.008
+
+    scores:
+      smart: 5
+      fast: 3
+      cheap: 4
+
   o3-mini:
     type: chat_completion
     name: o3-mini
@@ -201,8 +214,8 @@ info:
     name: GPT-4o
     description: GPT-4o is the most advanced, <b>multimodal</b> (accepting text and images) model.
 
-    price_per_1000_input_tokens: 0.005
-    price_per_1000_output_tokens: 0.015
+    price_per_1000_input_tokens: 0.0025
+    price_per_1000_output_tokens: 0.010
 
     scores:
       smart: 5
