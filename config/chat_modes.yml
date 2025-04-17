@@ -34,7 +34,7 @@ pro:
     **TL;DR**: <TL;DR, skip for rewriting>
 
     <Step-by-step answer with CONCRETE details and key context>
-  parse_mode: html
+  parse_mode: markdown
 
 assistant:
   name: 👩🏼‍🎓 General Assistant
