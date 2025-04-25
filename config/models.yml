@@ -1,6 +1,33 @@
-available_text_models: ["gpt-4.1", "claude-3-7-sonnet-latest", "o1", "o3-mini"]
+available_text_models: ["gpt-4.1", "claude-3-7-sonnet-latest", "o1", "o4-mini"]
 
 info:
+  o3:
+    type: chat_completion
+    name: o3
+    description: o3 is OpenAI's most powerful reasoning model.
+    # The organization must be verified to use the model `o3`
+
+    price_per_1000_input_tokens: 0.01
+    price_per_1000_output_tokens: 0.04
+
+    scores:
+      smart: 5
+      fast: 1
+      cheap: 2
+
+  o4-mini:
+    type: chat_completion
+    name: o4-mini
+    description: o4-mini is OpenAI's faster, more affordable reasoning model.
+
+    price_per_1000_input_tokens: 0.0011
+    price_per_1000_output_tokens: 0.0044
+
+    scores:
+      smart: 5
+      fast: 3
+      cheap: 4
+
   gpt-4.1:
     type: chat_completion
     name: GPT-4.1
