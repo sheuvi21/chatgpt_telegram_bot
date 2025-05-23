@@ -1,6 +1,32 @@
-available_text_models: ["gpt-4.1", "claude-3-7-sonnet-latest", "o1", "o4-mini"]
+available_text_models: ["gpt-4.1", "o4-mini", "claude-sonnet-4-0", "claude-opus-4-0"]
 
 info:
+  claude-sonnet-4-0:
+    type: chat_completion
+    name: Claude Sonnet 4
+    description: Claude Sonnet 4 is Anthropic's high-performance model with exceptional reasoning and efficiency.
+
+    price_per_1000_input_tokens: 0.003
+    price_per_1000_output_tokens: 0.015
+
+    scores:
+      smart: 5
+      fast: 4
+      cheap: 4
+
+  claude-opus-4-0:
+    type: chat_completion
+    name: Claude Opus 4
+    description: Claude Opus 4 is Anthropic's most capable and intelligent model yet.
+
+    price_per_1000_input_tokens: 0.015
+    price_per_1000_output_tokens: 0.075
+
+    scores:
+      smart: 5
+      fast: 2
+      cheap: 2
+
   o3:
     type: chat_completion
     name: o3
