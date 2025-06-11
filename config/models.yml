@@ -33,13 +33,13 @@ info:
     description: o3 is OpenAI's most powerful reasoning model.
     # The organization must be verified to use the model `o3`
 
-    price_per_1000_input_tokens: 0.01
-    price_per_1000_output_tokens: 0.04
+    price_per_1000_input_tokens: 0.002
+    price_per_1000_output_tokens: 0.008
 
     scores:
       smart: 5
       fast: 1
-      cheap: 2
+      cheap: 4
 
   o4-mini:
     type: chat_completion
