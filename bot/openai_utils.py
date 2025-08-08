@@ -39,6 +39,7 @@ OPENAI_AVAILABLE_MODELS = {
     "gpt-4.1",
     "o3",
     "o4-mini",
+    "gpt-5",
 }
 OPENAI_CHAT_MODELS = {
     "gpt-3.5-turbo-16k",
@@ -55,6 +56,7 @@ OPENAI_CHAT_MODELS = {
     "gpt-4.1",
     "o3",
     "o4-mini",
+    "gpt-5",
 }
 OPENAI_VISION_MODELS = {
     "gpt-4-turbo-preview",
@@ -64,6 +66,7 @@ OPENAI_VISION_MODELS = {
     "gpt-4.1",
     "o3",
     "o4-mini",
+    "gpt-5",
 }
 OPENAI_REASONING_MODELS = {
     "o1-preview",
@@ -72,6 +75,7 @@ OPENAI_REASONING_MODELS = {
     "o3-mini",
     "o3",
     "o4-mini",
+    "gpt-5",
 }
 
 
@@ -382,7 +386,7 @@ class ChatGPT(LLM):
         return answer
 
     def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
-        if model in ("gpt-4.1", "o4-mini"):
+        if model in ("gpt-4.1", "o4-mini", "gpt-5"):
             encoding = tiktoken.get_encoding("o200k_base")
         else:
             encoding = tiktoken.encoding_for_model(model)
