@@ -351,7 +351,7 @@ class ChatGPT(LLM):
         messages = []
 
         if prompt is not None:
-            messages.append({"role": "system", "content": prompt})
+            messages.append({"role": "developer", "content": prompt})
         
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
@@ -438,9 +438,6 @@ class ChatGPT(LLM):
         return n_input_tokens, n_output_tokens
     
     def _get_system_prompt(self, chat_mode):
-        if self.model in OPENAI_REASONING_MODELS:
-            return None
-
         if chat_mode not in config.chat_modes.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
